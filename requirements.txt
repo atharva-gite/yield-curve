@@ -1,0 +1,11 @@
+pandas==2.2.2
+numpy==1.26.4
+scipy==1.13.1
+statsmodels==0.14.2
+streamlit==1.37.1
+plotly==5.23.0
+requests==2.32.3
+fredapi==0.5.2
+python-dotenv==1.0.1
+pytest==8.3.2
+groq==0.31.0
