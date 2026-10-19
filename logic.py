@@ -520,6 +520,62 @@ def discount_factors(maturities: Iterable[float], curve_yields: Iterable[float])
     return np.exp(-y * tau)
 
 
+KEY_RATE_TENORS = (2.0, 5.0, 10.0, 30.0)
+
+
+def _key_rate_weight(tenor: float, times: np.ndarray) -> np.ndarray:
+    """Tent weight: 1 at the key tenor and 0 at the neighboring key tenors."""
+    nodes = np.array(KEY_RATE_TENORS, dtype=float)
+    index = int(np.where(np.isclose(nodes, tenor))[0][0])
+    left = 0.0 if index == 0 else float(nodes[index - 1])
+    right = None if index == len(nodes) - 1 else float(nodes[index + 1])
+    weight = np.zeros(len(times), dtype=float)
+    if index == 0:
+        weight[times <= tenor] = 1.0
+    else:
+        on_left = (times > left) & (times <= tenor)
+        weight[on_left] = (times[on_left] - left) / (tenor - left)
+    if right is None:
+        weight[times >= tenor] = 1.0
+    else:
+        on_right = (times >= tenor) & (times < right)
+        weight[on_right] = (right - times[on_right]) / (right - tenor)
+    return weight
+
+
+def bond_risk(
+    maturity: float,
+    coupon_rate: float,
+    face_value: float,
+    payment_frequency: int,
+    curve_function: Callable[[np.ndarray], np.ndarray],
+    bump: float = 0.0001,
+) -> dict[str, object]:
+    """Parallel DV01 and key-rate DV01 from a 1bp bump of curve_function."""
+    price = price_coupon_bond(maturity, coupon_rate, face_value, payment_frequency, curve_function)
+
+    def parallel_bumped(times: np.ndarray) -> np.ndarray:
+        return curve_function(times) + bump
+
+    price_up = price_coupon_bond(maturity, coupon_rate, face_value, payment_frequency, parallel_bumped)
+    dv01 = -(price_up - price)
+    modified_duration = dv01 / (price * bump) if price else float("nan")
+    key_rate_dv01: dict[float, float] = {}
+    for tenor in KEY_RATE_TENORS:
+
+        def key_bumped(times: np.ndarray, tenor: float = tenor) -> np.ndarray:
+            return curve_function(times) + bump * _key_rate_weight(tenor, _as_array(times))
+
+        price_key = price_coupon_bond(maturity, coupon_rate, face_value, payment_frequency, key_bumped)
+        key_rate_dv01[tenor] = -(price_key - price)
+    return {
+        "price": price,
+        "dv01": dv01,
+        "modified_duration": modified_duration,
+        "key_rate_dv01": key_rate_dv01,
+    }
+
+
 def price_coupon_bond(
     maturity: float,
     coupon_rate: float,

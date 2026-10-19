@@ -14,6 +14,7 @@ from logic import (
     MATURITIES,
     SERIES_IDS,
     adf_stationarity_check,
+    bond_risk,
     call_llm,
     check_groq_model_availability,
     check_rate_limit,
@@ -479,6 +480,32 @@ def fit_comparison_cards(ns_fit, nss_fit, spline_fit, cv) -> None:
             st.markdown(card_html, unsafe_allow_html=True)
 
 
+def render_bond_risk(nss_params: dict) -> None:
+    section_intro(
+        "Bond risk",
+        "Price one bond off the fitted NSS curve. DV01 is the price loss, per 100 face, for a 1bp rise.",
+    )
+    controls = st.columns(3)
+    maturity = controls[0].number_input("Maturity (years)", min_value=0.25, max_value=30.0, value=10.0, step=0.25)
+    coupon = controls[1].number_input("Coupon rate", min_value=0.0, max_value=0.20, value=0.04, step=0.005, format="%.3f")
+    frequency = controls[2].selectbox("Payments per year", [1, 2, 4], index=1)
+    risk = bond_risk(
+        float(maturity),
+        float(coupon),
+        100.0,
+        int(frequency),
+        lambda times: nss_curve(times, **nss_params),
+    )
+    rows = [
+        ["Price", f"{risk['price']:.4f}"],
+        ["Modified duration", f"{float(risk['modified_duration']):.3f}"],
+        ["Parallel DV01", f"{risk['dv01']:.4f}"],
+    ]
+    for tenor, value in risk["key_rate_dv01"].items():
+        rows.append([f"{tenor:.0f}y key-rate DV01", f"{float(value):.4f}"])
+    st.markdown(mini_table(["Measure", "Per 100 face"], rows), unsafe_allow_html=True)
+
+
 def render_fitting_console(data: pd.DataFrame, session: dict) -> None:
     section_intro(
         "Dynamic Fitting Console",
@@ -571,6 +598,7 @@ def render_fitting_console(data: pd.DataFrame, session: dict) -> None:
             "Forwards are the instantaneous forwards of the fitted constant-maturity curve, "
             "not a bootstrapped Treasury discount curve."
         )
+    render_bond_risk(nss_fit.params)
 
     adf = adf_stationarity_check(nss_fit.residuals)
     css = "status-ok" if adf["passed"] else "status-bad"

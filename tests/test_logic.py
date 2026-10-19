@@ -9,6 +9,7 @@ from logic import (
     call_llm,
     check_rate_limit,
     compute_pca,
+    bond_risk,
     discount_factors,
     fit_smoothing_spline,
     fit_nss,
@@ -141,6 +142,27 @@ def test_discount_and_zero_coupon_bond_price():
     )
     assert np.isclose(price, 100.0 * np.exp(-0.05 * 2.0))
     assert np.isclose(discount_factors([2.0], [0.05])[0], np.exp(-0.1))
+
+
+def test_bond_risk_flat_two_year_zero_matches_analytic_dv01():
+    def flat(times: np.ndarray) -> np.ndarray:
+        return np.full_like(times, 0.05, dtype=float)
+
+    risk = bond_risk(maturity=2.0, coupon_rate=0.0, face_value=100.0, payment_frequency=1, curve_function=flat)
+    expected_dv01 = 100.0 * 2.0 * np.exp(-0.10) * 0.0001
+    assert np.isclose(risk["modified_duration"], 2.0, atol=1e-3)
+    assert np.isclose(risk["dv01"], expected_dv01, rtol=1e-3)
+
+
+def test_key_rate_bump_moves_the_local_bond_only():
+    def flat(times: np.ndarray) -> np.ndarray:
+        return np.full_like(times, 0.04, dtype=float)
+
+    two_year = bond_risk(maturity=2.0, coupon_rate=0.0, face_value=100.0, payment_frequency=1, curve_function=flat)
+    ten_year = bond_risk(maturity=10.0, coupon_rate=0.0, face_value=100.0, payment_frequency=1, curve_function=flat)
+    assert abs(two_year["key_rate_dv01"][10.0]) < 1e-8
+    assert ten_year["key_rate_dv01"][10.0] > 0.01
+    assert np.isclose(two_year["key_rate_dv01"][2.0], two_year["dv01"])
 
 
 def test_adf_stationarity_check_detects_stationary_noise():
