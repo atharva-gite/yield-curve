@@ -41,19 +41,21 @@ st.set_page_config(page_title="Yield Curve", layout="wide", page_icon="YC")
 
 THEMES = {
     "research": {
-        "bg": "#f6f3ec",
-        "panel": "#fffdf8",
-        "ink": "#1c1917",
-        "muted": "#6b6560",
-        "rule": "#d6d1c7",
-        "accent": "#1e3a5f",
-        "positive": "#166534",
+        "bg": "#F6F4EF",
+        "panel": "#FFFFFF",
+        "ink": "#252C28",
+        "muted": "#77766E",
+        "rule": "#E5E1D8",
+        "accent": "#526B58",
+        "on_accent": "#FFFFFF",
+        "hover": "#F5F3EE",
+        "positive": "#526B58",
         "negative": "#991b1b",
-        "grid": "#e6e1d6",
-        "plot": "#fffdf8",
-        "zero": "#d6d1c7",
-        "fill": "rgba(153, 27, 27, 0.10)",
-        "colorway": ["#1c1917", "#1e3a5f", "#3d5a40", "#a8a29e", "#5b7c99", "#6b8f71"],
+        "grid": "#E5E1D8",
+        "plot": "#FFFFFF",
+        "zero": "#E5E1D8",
+        "fill": "rgba(82, 107, 88, 0.10)",
+        "colorway": ["#252C28", "#526B58", "#3d5a40", "#77766E", "#5b7c99", "#6b8f71"],
     },
     "desk": {
         "bg": "#0c0e11",
@@ -61,14 +63,16 @@ THEMES = {
         "ink": "#e7e2d6",
         "muted": "#9a9488",
         "rule": "#2a2e35",
-        "accent": "#d4a017",
+        "accent": "#8fbc8f",
+        "on_accent": "#0c0e11",
+        "hover": "#1c2026",
         "positive": "#8fbc8f",
         "negative": "#d4786a",
         "grid": "#2a2e35",
         "plot": "#101318",
         "zero": "#3a3f47",
         "fill": "rgba(212, 120, 106, 0.16)",
-        "colorway": ["#e7e2d6", "#d4a017", "#c4b8a0", "#6f6a62", "#8a7340", "#9a8f7c"],
+        "colorway": ["#e7e2d6", "#8fbc8f", "#c4b8a0", "#6f6a62", "#8a7340", "#9a8f7c"],
     },
 }
 
@@ -92,9 +96,13 @@ def inject_css(theme: str) -> None:
             --muted: {tokens["muted"]};
             --rule: {tokens["rule"]};
             --accent: {tokens["accent"]};
+            --on-accent: {tokens["on_accent"]};
+            --hover: {tokens["hover"]};
             --positive: {tokens["positive"]};
             --negative: {tokens["negative"]};
         }}
+        *, *::before, *::after {{ box-sizing: border-box; }}
+        .stApp {{ overflow-x: hidden; }}
 
         html, body, .stApp, [data-testid="stHeader"], [data-testid="stToolbar"] {{
             background: var(--bg);
@@ -105,7 +113,7 @@ def inject_css(theme: str) -> None:
         p, li, label, .stMarkdown {{ color: var(--ink); }}
         .kicker {{
             color: var(--muted);
-            font-size: 0.72rem;
+            font-size: 12px;
             letter-spacing: 0.16em;
             text-transform: uppercase;
             margin: 0;
@@ -126,14 +134,15 @@ def inject_css(theme: str) -> None:
         div[data-testid="stVerticalBlockBorderWrapper"] {{
             background: var(--panel);
             border: 1px solid var(--rule);
-            border-radius: 0;
-            padding: 16px;
+            border-radius: 8px;
+            padding: 24px;
             box-shadow: none;
         }}
         div[data-testid="stVerticalBlockBorderWrapper"] h3 {{
-            margin-top: 0;
-            font-size: 1rem;
-            font-weight: 500;
+            margin: 0 0 24px;
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.2;
             color: var(--ink);
         }}
         .status-card, .status-line {{
@@ -269,25 +278,236 @@ def inject_css(theme: str) -> None:
             border: 1px solid var(--rule);
             background: var(--panel);
         }}
-        button[kind="primary"], button[kind="secondary"] {{
-            background: transparent;
-            color: var(--ink);
-            border: 1px solid var(--accent);
-            border-radius: 0;
+        .stButton > button,
+        button[kind="primary"],
+        button[kind="secondary"] {{
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: transparent !important;
+            color: var(--ink) !important;
+            border: 1px solid var(--rule) !important;
+            border-radius: 6px !important;
+            box-shadow: none !important;
+            padding: 8px !important;
+            min-height: 0 !important;
+            height: auto !important;
+            line-height: 1.5 !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }}
+        .stButton > button:hover {{
+            background: var(--hover) !important;
+            border-color: var(--rule) !important;
+        }}
+        .stButton > button[kind="primary"] {{
+            background: var(--accent) !important;
+            color: var(--on-accent) !important;
+            border: 1px solid var(--accent) !important;
+            border-radius: 6px !important;
+            padding: 10px 16px !important;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            min-height: 40px !important;
+        }}
+        .stButton > button[kind="primary"]:hover {{
+            background: var(--accent) !important;
+            filter: brightness(0.92);
+            border-color: var(--accent) !important;
+        }}
+        .element-container:has(.help-control) {{
+            display: none;
+        }}
+        .element-container:has(.help-control) ~ .element-container .stButton {{
+            display: flex;
+            justify-content: flex-end;
+            margin: 0;
+        }}
+        .element-container:has(.help-control) ~ .element-container .stButton > button {{
+            width: auto !important;
+            min-width: 0 !important;
+            height: 32px !important;
+            padding: 0 12px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.08em !important;
+            line-height: 1 !important;
+        }}
+        .header-controls {{
+            text-align: right;
+            margin: 0 0 8px;
+        }}
+        div[data-testid="column"]:has(.header-controls) [data-testid="stHorizontalBlock"] {{
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+        }}
+        div[data-testid="column"]:has(.header-controls) [data-testid="stHorizontalBlock"] > div[data-testid="column"] {{
+            width: auto !important;
+            flex: 0 0 auto !important;
+            min-width: 0;
+        }}
+        div[data-testid="column"]:has(.header-controls) [data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child {{
+            min-width: 88px;
+        }}
+        .report-copy {{
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+            margin: 4px 0 0;
+            max-width: 52ch;
+        }}
+        .element-container:has(.report-card-mark) {{
+            display: none;
+        }}
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.report-card-mark) > div[data-testid="stVerticalBlock"] {{
+            gap: 0;
+        }}
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.report-card-mark) [data-testid="stHorizontalBlock"] {{
+            align-items: center;
+            gap: 16px !important;
+        }}
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.report-card-mark) h3 {{
+            margin: 0;
+        }}
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.report-card-mark) [data-testid="column"]:last-child .stButton {{
+            display: flex;
+            justify-content: flex-end;
+            margin: 0;
+        }}
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.report-card-mark) [data-testid="column"]:last-child .stButton > button {{
+            min-width: 148px;
+            margin: 0;
+        }}
+        .report {{
+            border-top: 1px solid var(--rule);
+            margin-top: 16px;
+            padding-top: 16px;
+        }}
+        .stButton > button:focus,
+        .stButton > button:focus-visible,
+        button[kind="primary"]:focus-visible,
+        button[kind="secondary"]:focus-visible {{
+            outline: 2px solid var(--accent) !important;
+            outline-offset: 2px !important;
+            box-shadow: none !important;
+        }}
+        .stButton > button p,
+        .stButton > button span,
+        .stButton > button div {{
+            background: transparent !important;
+            border: 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: inherit !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: inherit !important;
+            line-height: inherit !important;
+        }}
+        div[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"]:has(.analyst-prompts) {{
+            gap: 0 !important;
+        }}
+        .element-container:has(.analyst-prompts) {{
+            display: none;
+        }}
+        .element-container:has(.analyst-prompts) ~ .element-container {{
+            margin: 0;
+        }}
+        .element-container:has(.analyst-prompts) ~ .element-container .stButton {{
+            width: 100%;
+            margin: 0 0 14px;
+        }}
+        .element-container:has(.analyst-prompts) ~ .element-container:last-of-type .stButton {{
+            margin-bottom: 0;
+        }}
+        .element-container:has(.analyst-prompts) ~ .element-container .stButton > button {{
+            width: 100%;
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: flex-start;
+            text-align: left !important;
+            white-space: normal !important;
+            overflow: visible;
+            text-overflow: unset;
+            background: var(--panel) !important;
+            border: 1px solid var(--rule) !important;
+            border-radius: 8px !important;
+            padding: 16px !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            line-height: 1.5 !important;
+        }}
+        .element-container:has(.analyst-prompts) ~ .element-container .stButton > button:hover {{
+            background: var(--hover) !important;
         }}
         @media (max-width: 900px) {{
             section.main div[data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; }}
             .metric-card-grid {{ grid-template-columns: 1fr; }}
+            .element-container:has(.analyst-prompts) ~ .element-container .stButton > button {{
+                max-width: 100%;
+            }}
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.report-card-mark) [data-testid="column"]:last-child .stButton {{
+                justify-content: flex-start;
+                margin-top: 12px;
+            }}
         }}
-        .summary-note {{
-            border-top: 1px solid var(--rule);
-            margin-top: 10px;
-            padding-top: 10px;
+        .summary-note, .report-body {{
             color: var(--ink);
-            line-height: 1.5;
+            line-height: 1.6;
+            white-space: pre-wrap;
         }}
-        .block-container {{ padding-top: 1.2rem !important; max-width: 1180px; }}
-        :focus-visible {{ outline: 1px solid var(--accent); outline-offset: 2px; }}
+        .guide-prose {{
+            max-width: 74ch;
+            color: var(--ink);
+            font-size: 1.02rem;
+            line-height: 1.65;
+            margin: 0 0 0.4rem;
+        }}
+        .guide-caption {{
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 8px 0 20px;
+        }}
+        .analyst-empty {{
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 8px;
+            min-height: 0;
+            margin: 0 0 24px;
+        }}
+        .analyst-empty-title {{
+            color: var(--ink);
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }}
+        .analyst-empty p {{
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.5;
+            margin: 0;
+        }}
+        [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {{ display: none; }}
+        .block-container {{ padding-top: 24px !important; max-width: 1180px; overflow-x: hidden; }}
+        :focus {{ outline: none; }}
+        button:focus-visible,
+        [role="tab"]:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        [role="radio"]:focus-visible {{
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -575,6 +795,9 @@ def render_fitting_console(data: pd.DataFrame, session: dict) -> None:
     session["nss_params"] = nss_fit.params
     session["spline_params"] = spline_fit.params
     session["curve_cv_rmse"] = {name: float(result["rmse"]) for name, result in cv.items()}
+    session["yields_percent"] = {
+        series: round(float(level) * 100, 3) for series, level in zip(SERIES_IDS, observed)
+    }
 
     st.markdown(f"<div class='meta-line'>Nearest FRED date {curve_date.date()}</div>", unsafe_allow_html=True)
     # Consolidated per-model cards (in-sample, cross-val, residual sparkline)
@@ -649,18 +872,39 @@ def render_fitting_console(data: pd.DataFrame, session: dict) -> None:
     state = "stationary" if adf["passed"] else "not stationary"
     tone = "status-ok" if adf["passed"] else "status-bad"
     st.markdown(f"<div class='status-line {tone}'>p = {pval:.3f} · {state}</div>", unsafe_allow_html=True)
+    yields_percent = {series: round(float(level) * 100, 3) for series, level in zip(SERIES_IDS, observed)}
+    y3m = yields_percent["DGS3MO"]
+    y2 = yields_percent["DGS2"]
+    y10 = yields_percent["DGS10"]
+    y30 = yields_percent["DGS30"]
     render_summary(
         "curve",
         {
             "date": str(curve_date.date()),
-            "yields_percent": {series: round(float(level) * 100, 3) for series, level in zip(SERIES_IDS, observed)},
+            "three_month_percent": y3m,
+            "two_year_percent": y2,
+            "ten_year_percent": y10,
+            "thirty_year_percent": y30,
+            "slope_2s10s_bp": round((y10 - y2) * 100, 1),
+            "slope_10s30s_bp": round((y30 - y10) * 100, 1),
+            "yields_percent": yields_percent,
             "ns_rmse_bp": round(ns_fit.rmse * 10000, 2),
             "nss_rmse_bp": round(nss_fit.rmse * 10000, 2),
             "spline_rmse_bp": round(spline_fit.rmse * 10000, 2),
+            "ns_cv_rmse_bp": round(float(cv["ns"]["rmse"]) * 10000, 2),
+            "nss_cv_rmse_bp": round(float(cv["nss"]["rmse"]) * 10000, 2),
+            "spline_cv_rmse_bp": round(float(cv["spline"]["rmse"]) * 10000, 2),
             "ns_lambda": round(float(ns_fit.params["lambda"]), 3),
             "ns_long_run_percent": round(float(ns_fit.params["beta0"]) * 100, 3),
+            "nss_long_run_percent": round(float(nss_fit.params["beta0"]) * 100, 3),
+            "nss_lambda1": round(float(nss_fit.params["lambda1"]), 3),
             "nss_residual_adf_p": round(pval, 4),
             "nss_residuals_stationary": bool(adf["passed"]),
+            "units": {
+                "yields": "percent",
+                "rmse": "basis points",
+                "slopes": "basis points",
+            },
             "caveat": "Constant-maturity yields. Forwards belong to the fitted curve, not a bootstrapped discount curve.",
         },
     )
@@ -676,11 +920,15 @@ def render_pca(data: pd.DataFrame, session: dict) -> None:
     session["pca_explained_variance"] = [float(x) for x in pca["explained_variance"]]
     if pca["diagnostic"]:
         st.warning(pca["diagnostic"])
+    explained = [float(value) for value in pca["explained_variance"]]
     render_summary(
         "factors",
         {
-            "explained_variance": [round(float(value), 4) for value in pca["explained_variance"]],
             "labels": [str(label) for label in pca["loadings"].columns],
+            "explained_pct": [round(value * 100, 1) for value in explained],
+            "explained_variance": [round(value, 4) for value in explained],
+            "combined_first_three_pct": round(float(np.sum(explained[:3])) * 100, 1),
+            "input": "daily yield changes, not yield levels",
             "diagnostic": str(pca["diagnostic"] or "The first three components cover the usual share of daily changes."),
         },
     )
@@ -748,6 +996,8 @@ def render_backtester(data: pd.DataFrame, session: dict) -> None:
             test_window=int(test_window),
         )
     session["backtest_sharpe"] = float(result["sharpe"])
+    session["backtest_max_drawdown"] = float(result["max_drawdown"])
+    session["backtest_strategy"] = strategy
     metric_cards(
         [
             ("Annualized Sharpe", f"{result['sharpe']:.2f}", "Walk-forward risk-adjusted return", "positive" if result["sharpe"] >= 0 else "negative"),
@@ -755,17 +1005,26 @@ def render_backtester(data: pd.DataFrame, session: dict) -> None:
             ("Drawdown Duration", f"{result['max_drawdown_duration']} days", "Longest underwater stretch", ""),
         ]
     )
+    strategy_labels = {
+        "slope_mean_reversion": "10-year minus 2-year mean reversion",
+        "slope_momentum": "10-year minus 2-year momentum",
+        "butterfly_mean_reversion": "2s5s10s butterfly mean reversion",
+    }
+    drawdown_bp = round(float(result["max_drawdown"]) * 10000, 2)
     render_summary(
         "backtest",
         {
             "strategy": strategy,
+            "strategy_label": strategy_labels.get(strategy, strategy),
             "sharpe": round(float(result["sharpe"]), 2),
-            "max_drawdown_bp": round(float(result["max_drawdown"]) * 10000, 2),
+            "max_drawdown_bp": drawdown_bp,
+            "max_drawdown_bp_abs": abs(drawdown_bp),
             "max_drawdown_duration_days": int(result["max_drawdown_duration"]),
             "train_window_days": int(train_window),
             "test_window_days": int(test_window),
             "transaction_cost_bp": float(cost_bp),
             "slippage_multiplier": float(slippage),
+            "execution": "one-day lag after the signal; costs charged on position changes",
         },
     )
     fig = go.Figure(go.Scatter(x=result["cumulative_pnl"].index, y=result["cumulative_pnl"], name="Cumulative PnL"))
@@ -792,50 +1051,69 @@ def render_backtester(data: pd.DataFrame, session: dict) -> None:
         st.dataframe(result["trade_log"].tail(50), use_container_width=True)
 
 
-def render_context_dashboard(session: dict) -> None:
-    with st.expander("View session context", expanded=False):
-        selected_date = str(session.get("selected_date", "Not fitted"))
-        cv = session.get("curve_cv_rmse", {}) or {}
-        pca_variance = session.get("pca_explained_variance", []) or []
-        sharpe = session.get("backtest_sharpe")
-        sharpe_value = "Not run" if sharpe is None else f"{float(sharpe):.2f}"
-        sharpe_tone = "" if sharpe is None else ("positive" if float(sharpe) >= 0 else "negative")
+ANALYST_PROMPTS = (
+    "Read the selected curve: the level, the 2s10s slope, and which fit is tightest.",
+    "Explain the factor shares, and what a level, slope, or curvature move means in this brief.",
+    "Interpret the walk-forward Sharpe and the drawdown for the strategy in the brief.",
+)
 
-        metric_cards(
-            [
-                ("Selected Date", selected_date, "Nearest available Treasury curve", ""),
-                ("Backtest Sharpe", sharpe_value, "Latest walk-forward run", sharpe_tone),
-            ]
-        )
 
-        rows = []
-        for label, key in (("NS", "ns"), ("NSS", "nss"), ("Spline", "spline")):
-            value = cv.get(key)
-            rows.append([label, "Pending" if value is None else bp(float(value))])
-        st.markdown(mini_table(["Model", "CV-RMSE"], rows), unsafe_allow_html=True)
-
-        if pca_variance:
-            spark_rows = []
-            for idx, value in enumerate(pca_variance, start=1):
-                width = max(0.0, min(100.0, float(value) * 100))
-                spark_rows.append(
-                    "<div class='spark-row'>"
-                    f"<span>PC{idx}</span>"
-                    "<span class='spark-track'>"
-                    f"<span class='spark-fill' style='display:block;width:{width:.1f}%'></span>"
-                    "</span>"
-                    f"<span>{pct(float(value))}</span>"
-                    "</div>"
-                )
-            st.markdown("".join(spark_rows), unsafe_allow_html=True)
-        else:
-            st.markdown("<div class='chat-empty'>Factor context appears after the Factors tab runs.</div>", unsafe_allow_html=True)
+def render_analyst_brief(session: dict) -> None:
+    yields = session.get("yields_percent") or {}
+    cv = session.get("curve_cv_rmse") or {}
+    pca_variance = session.get("pca_explained_variance") or []
+    sharpe = session.get("backtest_sharpe")
+    drawdown = session.get("backtest_max_drawdown")
+    y2 = yields.get("DGS2")
+    y10 = yields.get("DGS10")
+    slope = None if y2 is None or y10 is None else (float(y10) - float(y2)) * 100
+    strategy_labels = {
+        "slope_mean_reversion": "10Y/2Y mean reversion",
+        "slope_momentum": "10Y/2Y momentum",
+        "butterfly_mean_reversion": "2s5s10s fly",
+    }
+    strategy_name = strategy_labels.get(str(session.get("backtest_strategy", "")), "Latest rule")
+    sharpe_value = "Pending" if sharpe is None else f"{float(sharpe):.2f}"
+    sharpe_tone = "" if sharpe is None else ("positive" if float(sharpe) >= 0 else "negative")
+    slope_value = "Pending" if slope is None else f"{slope:.1f} bp"
+    metric_cards(
+        [
+            ("Curve date", str(session.get("selected_date", "Pending")), "Date the fits use", ""),
+            ("2s10s slope", slope_value, "10-year yield minus 2-year yield", ""),
+            ("Walk-forward Sharpe", sharpe_value, strategy_name, sharpe_tone),
+        ]
+    )
+    rows = []
+    for label, key in (("Nelson-Siegel", "ns"), ("Svensson", "nss"), ("Spline", "spline")):
+        value = cv.get(key)
+        rows.append([label, "Pending" if value is None else bp(float(value))])
+    st.markdown(mini_table(["Fit", "Cross-val error"], rows), unsafe_allow_html=True)
+    if pca_variance:
+        spark_rows = []
+        for idx, value in enumerate(pca_variance, start=1):
+            width = max(0.0, min(100.0, float(value) * 100))
+            spark_rows.append(
+                "<div class='spark-row'>"
+                f"<span>PC{idx}</span>"
+                "<span class='spark-track'>"
+                f"<span class='spark-fill' style='display:block;width:{width:.1f}%'></span>"
+                "</span>"
+                f"<span>{pct(float(value))}</span>"
+                "</div>"
+            )
+        st.markdown("".join(spark_rows), unsafe_allow_html=True)
+    drawdown_text = "pending" if drawdown is None else bp(abs(float(drawdown)))
+    st.markdown(
+        "<div class='guide-caption'>"
+        "This brief is the entire source the analyst may use. "
+        f"The latest peak-to-trough result on the backtest is {escape(drawdown_text)}. "
+        "A reply that needs a figure missing from this brief should say so."
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def render_memo_chat(messages: list[dict[str, str]]) -> None:
-    if not messages:
-        st.markdown("<div class='chat-empty'>Ask about the curve, the factors, or the backtest.</div>", unsafe_allow_html=True)
-        return
     rows = []
     for message in messages:
         role = "Analyst" if message["role"] == "assistant" else "You"
@@ -849,9 +1127,6 @@ def render_memo_chat(messages: list[dict[str, str]]) -> None:
 
 
 def render_terminal_chat(messages: list[dict[str, str]]) -> None:
-    if not messages:
-        st.markdown("<div class='terminal-log'><span class='terminal-assistant'>analyst</span> ready</div>", unsafe_allow_html=True)
-        return
     lines = []
     for message in messages:
         role = "analyst" if message["role"] == "assistant" else "you"
@@ -860,95 +1135,434 @@ def render_terminal_chat(messages: list[dict[str, str]]) -> None:
     st.markdown(f"<div class='terminal-log'>{'<br><br>'.join(lines)}</div>", unsafe_allow_html=True)
 
 
+def _ask_analyst(prompt: str, context_json: str) -> None:
+    st.session_state["chat_messages"].append({"role": "user", "content": prompt})
+    identifier, identifier_mode = client_rate_limit_identifier()
+    rate_limit = check_rate_limit(identifier)
+    if not rate_limit.allowed:
+        error_card(
+            "Question limit reached. "
+            f"Limit: {rate_limit.limit} requests per {rate_limit.window_seconds // 3600} hours per {identifier_mode}. "
+            f"Try again after {format_reset_time(rate_limit.reset_at)}."
+        )
+        return
+    with st.spinner("Writing the reply from the brief..."):
+        result = call_llm(st.session_state["chat_messages"], context_json)
+    if result.ok:
+        st.session_state["chat_messages"].append({"role": "assistant", "content": result.content})
+        st.rerun()
+    else:
+        error_card(result.error or "The reply could not be written.")
+
+
 def render_ai_panel(session: dict) -> None:
     section_intro(
         "Analyst",
-        "Grounded answers using the active curve, PCA, and backtest session context.",
+        "A conversation limited to the brief on the left: the fitted curve, the factor shares, and the backtest.",
     )
     context_json = serialize_session_context(session)
     st.session_state.setdefault("chat_messages", [])
-    render_context_dashboard(session)
-
-    with st.container(border=True):
-        if active_theme() == "desk":
-            render_terminal_chat(st.session_state["chat_messages"])
+    messages = st.session_state["chat_messages"]
+    brief_col, thread_col = st.columns([1, 1.25], gap="large")
+    with brief_col, st.container(border=True):
+        st.markdown("### Brief")
+        render_analyst_brief(session)
+    with thread_col, st.container(border=True):
+        st.markdown("### Correspondence")
+        if messages:
+            if active_theme() == "desk":
+                render_terminal_chat(messages)
+            else:
+                render_memo_chat(messages)
         else:
-            render_memo_chat(st.session_state["chat_messages"])
-
-    prompt = st.chat_input("Ask the quant analyst")
-    if prompt:
-        st.session_state["chat_messages"].append({"role": "user", "content": prompt})
-        identifier, identifier_mode = client_rate_limit_identifier()
-        rate_limit = check_rate_limit(identifier)
-        if not rate_limit.allowed:
-            error_card(
-                "Chat request limit reached. "
-                f"Limit: {rate_limit.limit} requests per {rate_limit.window_seconds // 3600} hours per {identifier_mode}. "
-                f"Try again after {format_reset_time(rate_limit.reset_at)}."
+            st.markdown(
+                "<div class='analyst-empty'>"
+                "<div class='kicker'>Awaiting a question</div>"
+                "<div class='analyst-empty-title'>The brief is ready.</div>"
+                "<p>Ask about the slope, the factors, or the backtest. "
+                "The reply stays inside those figures and will name a gap if a number is missing.</p>"
+                "</div>",
+                unsafe_allow_html=True,
             )
-            return
-        st.caption(
-            f"{rate_limit.remaining} chat requests remaining in this rolling "
-            f"{rate_limit.window_seconds // 3600}-hour window for this {identifier_mode}."
-        )
-        with st.spinner("Calling the configured LLM provider with the active curve session context..."):
-            result = call_llm(st.session_state["chat_messages"], context_json)
-        if result.ok:
-            st.session_state["chat_messages"].append({"role": "assistant", "content": result.content})
-            st.rerun()
-        else:
-            error_card(result.error or "LLM request failed.")
-
-
-def render_guide() -> None:
-    st.markdown(
-        """
-**What this is.** A desk view of the U.S. Treasury curve: a fit, the forwards implied by that fit, a factor split of daily changes, and a walk-forward spread backtest.
-
-**The data.** FRED constant-maturity yields (`DGS1MO` through `DGS30`). They are par-style yields, not a discount curve built from bills and coupons. Prints are in percent on the charts and in decimal inside the models.
-
-**Curve.** Nelson-Siegel, Nelson-Siegel-Svensson, and a smoothing spline are fit to one date. The dashed lines are instantaneous forwards of those fitted curves. RMSE is the in-sample miss. Cross-val drops one maturity and refits. The p-value is an ADF test on the NSS residuals.
-
-**Factors.** Principal components of daily yield *changes*, not of the yield levels. The loadings are labeled level, slope, or curvature from their shape.
-
-**Backtest.** A 10s/2s slope or a 2s5s10s butterfly. Each test window uses thresholds from the prior train window only, then waits one day to trade. Sharpe, drawdown, and time underwater are on that path.
-
-**Risk.** The bond table prices one coupon bond off the NSS curve. DV01 is the price loss per 100 face for a 1bp rise. Key-rate DV01 bumps only the 2y, 5y, 10y, or 30y region.
-
-**Desk note.** The note on each tab is written from the figures already on screen. It is not sent until you ask, and it does not see anything outside that tab.
-        """
-    )
+        st.markdown("<div class='analyst-prompts'></div>", unsafe_allow_html=True)
+        for index, suggestion in enumerate(ANALYST_PROMPTS):
+            if st.button(suggestion, key=f"analyst-prompt-{index}", use_container_width=True):
+                _ask_analyst(suggestion, context_json)
+    prompt = st.chat_input("Ask about the brief")
+    if prompt:
+        _ask_analyst(prompt, context_json)
 
 
 def render_summary(topic: str, facts: dict[str, object]) -> None:
-    st.markdown("<div class='metric-label'>Desk note</div>", unsafe_allow_html=True)
     api_key, _source = resolve_groq_api_key()
-    if not api_key:
-        st.markdown(
-            "<div class='section-kicker'>Add GROQ_API_KEY to write a note from the figures on this tab. Nothing is sent until you ask.</div>",
-            unsafe_allow_html=True,
-        )
-        return
-    cache_key = f"summary::{topic}::{serialize_session_context(facts)}"
-    if st.button("Write note", key=f"write-note-{topic}"):
-        identifier, identifier_mode = client_rate_limit_identifier()
-        rate_limit = check_rate_limit(identifier)
-        if not rate_limit.allowed:
-            error_card(
-                "Note limit reached. "
-                f"Limit: {rate_limit.limit} requests per {rate_limit.window_seconds // 3600} hours per {identifier_mode}. "
-                f"Try again after {format_reset_time(rate_limit.reset_at)}."
+    copy = (
+        "A formal note from the figures already on this tab. Nothing is sent until you ask."
+        if api_key
+        else "Add GROQ_API_KEY to generate an AI report from the figures on this tab."
+    )
+    with st.container(border=True):
+        st.markdown("<div class='report-card-mark'></div>", unsafe_allow_html=True)
+        copy_col, btn_col = st.columns([3.4, 1], vertical_alignment="center", gap="medium")
+        with copy_col:
+            st.markdown("### AI Report")
+            st.markdown(f"<p class='report-copy'>{escape(copy)}</p>", unsafe_allow_html=True)
+        with btn_col:
+            asked = st.button(
+                "Generate",
+                key=f"ai-report-{topic}",
+                type="primary",
+                disabled=not bool(api_key),
             )
+        if not api_key:
             return
-        with st.spinner("Writing the note from the figures on this tab..."):
-            st.session_state[cache_key] = summarize_facts(topic, facts)
-    result = st.session_state.get(cache_key)
-    if result is None:
+        cache_key = f"summary::{topic}::{serialize_session_context(facts)}"
+        if asked:
+            identifier, identifier_mode = client_rate_limit_identifier()
+            rate_limit = check_rate_limit(identifier)
+            if not rate_limit.allowed:
+                error_card(
+                    "AI Report limit reached. "
+                    f"Limit: {rate_limit.limit} requests per {rate_limit.window_seconds // 3600} hours per {identifier_mode}. "
+                    f"Try again after {format_reset_time(rate_limit.reset_at)}."
+                )
+                return
+            with st.spinner("Preparing the AI report from the figures on this tab..."):
+                st.session_state[cache_key] = summarize_facts(topic, facts)
+        result = st.session_state.get(cache_key)
+        if result is None:
+            return
+        if result.ok:
+            st.markdown(
+                f"<div class='report'><div class='report-body'>{escape(result.content)}</div></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            error_card(result.error or "The AI report could not be written.")
+
+
+TENOR_LABELS = (
+    "1 month",
+    "3 months",
+    "6 months",
+    "1 year",
+    "2 years",
+    "3 years",
+    "5 years",
+    "7 years",
+    "10 years",
+    "20 years",
+    "30 years",
+)
+
+
+@st.cache_data(show_spinner="Preparing the walkthrough from the latest Treasury curve...")
+def guide_snapshot(data: pd.DataFrame) -> dict:
+    curve_date = data.index.max()
+    observed = data.loc[curve_date, SERIES_IDS].to_numpy(dtype=float)
+    ns_fit = fit_ns(MATURITIES, observed)
+    nss_fit = fit_nss(MATURITIES, observed)
+    spline_fit = fit_smoothing_spline(MATURITIES, observed)
+    grid = np.linspace(float(MATURITIES[0]), 30.0, 90)
+    ns_params = ns_fit.params
+    nss_params = nss_fit.params
+    ns_line = ns_curve(grid, ns_params["beta0"], ns_params["beta1"], ns_params["beta2"], ns_params["lambda"])
+    nss_line = nss_curve(
+        grid,
+        nss_params["beta0"],
+        nss_params["beta1"],
+        nss_params["beta2"],
+        nss_params["beta3"],
+        nss_params["lambda1"],
+        nss_params["lambda2"],
+    )
+    spline_line = predict_smoothing_spline(MATURITIES, observed, grid, spline_fit.params["smoothing_factor"])
+    forward = nss_forward(
+        grid,
+        nss_params["beta0"],
+        nss_params["beta1"],
+        nss_params["beta2"],
+        nss_params["beta3"],
+        nss_params["lambda1"],
+        nss_params["lambda2"],
+    )
+    pca = compute_pca(data)
+    loadings = pca["loadings"]
+    backtest = run_curve_spread_backtest(data)
+
+    def nss_at(times: np.ndarray) -> np.ndarray:
+        return nss_curve(
+            times,
+            nss_params["beta0"],
+            nss_params["beta1"],
+            nss_params["beta2"],
+            nss_params["beta3"],
+            nss_params["lambda1"],
+            nss_params["lambda2"],
+        )
+
+    risk = bond_risk(10.0, 0.04, 100.0, 2, nss_at)
+    y2 = float(observed[SERIES_IDS.index("DGS2")]) * 100
+    y10 = float(observed[SERIES_IDS.index("DGS10")]) * 100
+    pnl = backtest["cumulative_pnl"]
+    return {
+        "date": str(pd.Timestamp(curve_date).date()),
+        "observations": len(data),
+        "yields_percent": {
+            label: round(float(level) * 100, 3) for label, level in zip(TENOR_LABELS, observed)
+        },
+        "maturities": [float(value) for value in MATURITIES],
+        "observed_percent": [float(value) * 100 for value in observed],
+        "grid": [float(value) for value in grid],
+        "ns_percent": [float(value) * 100 for value in ns_line],
+        "nss_percent": [float(value) * 100 for value in nss_line],
+        "spline_percent": [float(value) * 100 for value in spline_line],
+        "forward_percent": [float(value) * 100 for value in forward],
+        "ns_rmse_bp": round(float(ns_fit.rmse) * 10000, 2),
+        "nss_rmse_bp": round(float(nss_fit.rmse) * 10000, 2),
+        "spline_rmse_bp": round(float(spline_fit.rmse) * 10000, 2),
+        "two_year": round(y2, 3),
+        "ten_year": round(y10, 3),
+        "slope_bp": round((y10 - y2) * 100, 1),
+        "loadings": {str(column): [float(value) for value in loadings[column].tolist()] for column in loadings.columns},
+        "explained": [float(value) for value in pca["explained_variance"]],
+        "explained_total": float(np.sum(pca["explained_variance"])),
+        "sharpe": round(float(backtest["sharpe"]), 2),
+        "max_drawdown_bp": round(abs(float(backtest["max_drawdown"])) * 10000, 1),
+        "underwater_days": int(backtest["max_drawdown_duration"]),
+        "pnl_dates": [str(pd.Timestamp(stamp).date()) for stamp in pnl.index],
+        "pnl": [float(value) * 10000 for value in pnl.to_numpy()],
+        "bond_price": round(float(risk["price"]), 2),
+        "bond_duration": round(float(risk["modified_duration"]), 2),
+        "bond_dv01": round(float(risk["dv01"]), 3),
+        "key_dv01": {str(int(tenor)): round(float(value), 3) for tenor, value in risk["key_rate_dv01"].items()},
+    }
+
+
+def _guide_text(text: str) -> None:
+    st.markdown(f"<div class='guide-prose'><p>{text}</p></div>", unsafe_allow_html=True)
+
+
+def _guide_caption(text: str) -> None:
+    st.markdown(f"<div class='guide-caption'>{text}</div>", unsafe_allow_html=True)
+
+
+def render_guide_page() -> None:
+    st.session_state.setdefault("theme", "research")
+    if st.session_state["theme"] not in THEMES:
+        st.session_state["theme"] = "research"
+    inject_css(st.session_state["theme"])
+    if st.button("Back to the desk"):
+        st.switch_page("app.py")
+    try:
+        data, source, warning = load_data()
+    except Exception as exc:
+        error_card(f"Data load failed: {exc}")
         return
-    if result.ok:
-        st.markdown(f"<div class='summary-note'>{escape(result.content)}</div>", unsafe_allow_html=True)
+    if warning:
+        st.warning(warning)
+    snap = guide_snapshot(data)
+    st.markdown(
+        "<div class='kicker'>How to read this</div>"
+        "<div class='app-title'>A walkthrough of the Treasury curve</div>"
+        f"<div class='meta-line'>Figures as of {escape(snap['date'])} · {escape(str(source))} · {snap['observations']:,} days</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("## What you are looking at")
+    _guide_text(
+        "The U.S. Treasury borrows for one month, for two years, for thirty years. "
+        "Each maturity has an interest rate. Place those rates on a chart, short loans on the left and long loans on the right, "
+        "and the line you get is the yield curve. It is the market's price of time."
+    )
+    _guide_text(
+        "This desk draws that line, measures how well a formula can reproduce it, "
+        "splits the day-to-day movement into a few repeating patterns, and then asks whether a simple trading rule would have worked in the past. "
+        "The pages below use the same numbers as the screen you just left."
+    )
+
+    st.markdown("## The eleven rates")
+    _guide_text(
+        "The dots come from FRED, the public database of the Federal Reserve Bank of St. Louis. "
+        "They are constant-maturity Treasury yields: the rate on a Treasury loan of that exact length, published each business day. "
+        "A higher dot means it costs the government more to borrow for that long."
+    )
+    if snap["slope_bp"] >= 0:
+        slope_sentence = (
+            f"On {snap['date']} the 2-year yield is {snap['two_year']:.2f}% and the 10-year yield is {snap['ten_year']:.2f}%. "
+            f"The 10-year sits {snap['slope_bp']:.0f} basis points above the 2-year. "
+            "One basis point is one hundredth of a percent. That gap is the slope: lenders ask to be paid more to lock money away for longer."
+        )
     else:
-        error_card(result.error or "The note could not be written.")
+        slope_sentence = (
+            f"On {snap['date']} the 2-year yield is {snap['two_year']:.2f}% and the 10-year yield is {snap['ten_year']:.2f}%. "
+            f"The 10-year sits {abs(snap['slope_bp']):.0f} basis points below the 2-year. "
+            "The curve slopes downward. That is unusual, and readers often take it as concern about growth ahead."
+        )
+    _guide_text(slope_sentence)
+    observed = go.Figure()
+    observed.add_trace(
+        go.Scatter(
+            x=snap["maturities"],
+            y=snap["observed_percent"],
+            mode="lines+markers",
+            name="Published yield",
+            marker={"size": 8},
+        )
+    )
+    style_figure(observed, xaxis_title="Years until the loan matures", yaxis_title="Yield (%)")
+    with st.container(border=True):
+        st.plotly_chart(observed, use_container_width=True)
+        _guide_caption(
+            "Each dot is one published Treasury yield. Read left to right as short loans to long loans. "
+            "The height is the annual interest rate, in percent."
+        )
+    st.markdown(
+        mini_table(["Maturity", "Yield"], [[label, f"{value:.2f}%"] for label, value in snap["yields_percent"].items()]),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("## Drawing a smooth line")
+    _guide_text(
+        "Eleven dots are not enough for a desk. Someone always asks for the rate at four years, or at twelve. "
+        "Three formulas fill in the gaps. Nelson-Siegel is the simple one: a long-run rate, a slope, and a single bend. "
+        "Svensson is the same idea with a second bend, used when the curve humps in the middle. "
+        "The smoothing spline stays closer to the dots and is less interested in a story about why the curve bends."
+    )
+    _guide_text(
+        f"The miss is measured in basis points. On {snap['date']} Nelson-Siegel misses by {snap['ns_rmse_bp']:.2f} bp, "
+        f"Svensson by {snap['nss_rmse_bp']:.2f} bp, and the spline by {snap['spline_rmse_bp']:.2f} bp. "
+        "A smaller number means the line sits closer to the published yields. "
+        "Closer is not always more useful: a line that hits every dot can bend for a reason that will not repeat tomorrow."
+    )
+    fits = go.Figure()
+    fits.add_trace(
+        go.Scatter(x=snap["maturities"], y=snap["observed_percent"], mode="markers", name="Published", marker={"size": 8})
+    )
+    fits.add_trace(go.Scatter(x=snap["grid"], y=snap["ns_percent"], mode="lines", name="Nelson-Siegel"))
+    fits.add_trace(go.Scatter(x=snap["grid"], y=snap["nss_percent"], mode="lines", name="Svensson"))
+    fits.add_trace(go.Scatter(x=snap["grid"], y=snap["spline_percent"], mode="lines", name="Spline"))
+    style_figure(fits, xaxis_title="Years", yaxis_title="Yield (%)")
+    with st.container(border=True):
+        st.plotly_chart(fits, use_container_width=True)
+        _guide_caption(
+            "The dots are the market. The lines are three ways to connect them. "
+            "Where a line leaves a dot, that is the fitting error quoted above."
+        )
+
+    st.markdown("## The dashed forward line")
+    _guide_text(
+        "The yield at ten years is an average rate from today out to year ten. "
+        "The forward is the rate that average implies for a moment along the way: what the curve says about year nine, or year fifteen, on its own. "
+        "The dashed line on the desk is that forward, taken from the Svensson fit."
+    )
+    _guide_text(
+        "It is the forward of the smooth curve drawn through the published yields. "
+        "A different exercise, stripping individual Treasury bonds into a discount curve, is not what this line shows."
+    )
+    forwards = go.Figure()
+    forwards.add_trace(go.Scatter(x=snap["grid"], y=snap["nss_percent"], mode="lines", name="Svensson yield"))
+    forwards.add_trace(
+        go.Scatter(x=snap["grid"], y=snap["forward_percent"], mode="lines", name="Forward", line={"dash": "dash"})
+    )
+    style_figure(forwards, xaxis_title="Years", yaxis_title="Rate (%)")
+    with st.container(border=True):
+        st.plotly_chart(forwards, use_container_width=True)
+        _guide_caption(
+            "The solid line is the fitted yield. The dashed line is the forward implied by that same fit. "
+            "When the dashed line sits above the solid line, the curve is saying that rates further out are higher than the average so far."
+        )
+
+    st.markdown("## What a bond loses if rates rise")
+    price_sentence = (
+        f"Take a 10-year bond with a 4% coupon, priced off the Svensson curve on {snap['date']}. "
+        f"Its price is {snap['bond_price']:.2f} per 100 of face value, so "
+        + (
+            "the coupon is rich relative to the curve and the bond is worth more than face."
+            if snap["bond_price"] >= 100
+            else "the coupon is cheap relative to the curve and the bond is worth less than face."
+        )
+    )
+    _guide_text(price_sentence)
+    _guide_text(
+        f"Modified duration is {snap['bond_duration']:.2f}. "
+        f"DV01 is the practical version of that number: if every yield rises by one basis point, this bond loses about ${snap['bond_dv01']:.3f} per $100 of face value. "
+        f"Split by region of the curve, the 2-year bump accounts for ${snap['key_dv01'].get('2', 0):.3f}, "
+        f"the 5-year for ${snap['key_dv01'].get('5', 0):.3f}, "
+        f"the 10-year for ${snap['key_dv01'].get('10', 0):.3f}, "
+        f"and the 30-year for ${snap['key_dv01'].get('30', 0):.3f}. "
+        "A 10-year bond should feel the 10-year region most."
+    )
+    keys = ["2", "5", "10", "30"]
+    risk_fig = go.Figure(
+        go.Bar(
+            x=[f"{key}-year" for key in keys],
+            y=[snap["key_dv01"].get(key, 0) for key in keys],
+            marker_color=THEMES[active_theme()]["accent"],
+            name="Key-rate DV01",
+        )
+    )
+    style_figure(risk_fig, yaxis_title="Price loss per $100 face")
+    with st.container(border=True):
+        st.plotly_chart(risk_fig, use_container_width=True)
+        _guide_caption(
+            "Each bar is the loss on the sample 10-year bond if only that part of the curve rises by one basis point. "
+            "The tallest bar is the region the bond actually depends on."
+        )
+
+    st.markdown("## The three ways the curve moves")
+    share = snap["explained_total"] * 100
+    _guide_text(
+        "Most days the whole curve shifts up or down together. That pattern is the level. "
+        "Some days the long end moves more than the short end. That is the slope. "
+        "A less common day bends the middle relative to the wings. That is the curvature. "
+        f"On this history, the first three patterns describe {share:.1f}% of the day-to-day changes. "
+        "The remainder is small and noisy. The calculation uses changes in yields, so it describes motion, not the height of the curve itself."
+    )
+    loadings_fig = go.Figure()
+    for name, values in snap["loadings"].items():
+        loadings_fig.add_trace(go.Scatter(x=snap["maturities"], y=values, mode="lines+markers", name=name))
+    style_figure(loadings_fig, xaxis_title="Years", yaxis_title="Loading")
+    with st.container(border=True):
+        st.plotly_chart(loadings_fig, use_container_width=True)
+        _guide_caption(
+            "A flat line across maturities is a level move: every yield changes together. "
+            "A line that rises from left to right is a slope move. A hump in the middle is curvature. "
+            "The name on each line is assigned from that shape."
+        )
+
+    st.markdown("## A rule, tested only on the past")
+    _guide_text(
+        "The backtest follows one rule: when the gap between the 10-year and the 2-year yield is unusually wide or unusually tight versus its own recent history, lean the other way, on the idea that the gap will drift back. "
+        "The rule is only allowed to learn from the prior year, then it is tested on the next few weeks, then it learns again. "
+        "It waits a day before the position changes, and a small cost is charged when it trades. "
+        "That discipline is what keeps the path from peeking at the future."
+    )
+    _guide_text(
+        f"The Sharpe ratio on this path is {snap['sharpe']:.2f}. "
+        "Sharpe compares the average result with how bumpy the path was. A number near zero means the gains and the setbacks cancelled. "
+        f"The worst fall from a peak is {snap['max_drawdown_bp']:.1f} basis points, "
+        f"and the longest stretch below a peak lasted {snap['underwater_days']} days. "
+        "This is a research path for a published yield spread. It is not a statement about money in an account, and it is not a forecast."
+    )
+    pnl_fig = go.Figure(go.Scatter(x=snap["pnl_dates"], y=snap["pnl"], name="Cumulative result"))
+    style_figure(pnl_fig, yaxis_title="Cumulative result (bp)")
+    with st.container(border=True):
+        st.plotly_chart(pnl_fig, use_container_width=True)
+        _guide_caption(
+            "The line adds up the daily change in the 10-year minus 2-year gap, after the trading cost, in basis points. "
+            "A rise means the rule was on the right side of the next day's move. A fall means it was not."
+        )
+
+    st.markdown("## The AI report and the analyst")
+    _guide_text(
+        "AI Report, on each tab, writes a formal note with three parts: what the figures say, which model or tenor produced them, and what they do not identify. "
+        "The Analyst page holds a conversation with the same limit. Both see only the brief already on screen. "
+        "Neither is given a news feed, and neither should invent a number. Ten requests are allowed every five hours."
+    )
+    _guide_text(
+        "Research is the paper theme. Desk is the dark screen. The figures are the same in both."
+    )
+    if st.button("Return to the desk"):
+        st.switch_page("app.py")
 
 
 def main() -> None:
@@ -963,7 +1577,7 @@ def main() -> None:
     except Exception as exc:
         error_card(f"Data load failed: {exc}")
         return
-    title_col, switch_col = st.columns([4, 1.3])
+    title_col, switch_col = st.columns([4, 1.5], vertical_alignment="center", gap="small")
     with title_col:
         st.markdown(
             "<div class='kicker'>U.S. Treasury</div>"
@@ -972,16 +1586,21 @@ def main() -> None:
             unsafe_allow_html=True,
         )
     with switch_col:
-        st.radio(
-            "Theme",
-            ["research", "desk"],
-            horizontal=True,
-            format_func=lambda value: "Research" if value == "research" else "Desk",
-            label_visibility="visible",
-            key="theme",
-        )
-        with st.popover("Help", help="What the data and each tab measure"):
-            render_guide()
+        st.markdown("<div class='kicker header-controls'>Theme</div>", unsafe_allow_html=True)
+        theme_col, help_col = st.columns([3.2, 1.3], vertical_alignment="center", gap="small")
+        with theme_col:
+            st.radio(
+                "Theme",
+                ["research", "desk"],
+                horizontal=True,
+                format_func=lambda value: "Research" if value == "research" else "Desk",
+                label_visibility="collapsed",
+                key="theme",
+            )
+        with help_col:
+            st.markdown("<div class='help-control'></div>", unsafe_allow_html=True)
+            if st.button("HELP ?", key="open-guide", help="How to read this desk"):
+                st.switch_page("pages/guide.py")
     if warning:
         st.warning(warning)
     session: dict = {}

@@ -25,6 +25,7 @@ from logic import (
     nss_curve,
     nss_forward,
     price_coupon_bond,
+    report_prompt,
     resolve_groq_api_key,
     rolling_ns_fit,
     run_curve_spread_backtest,
@@ -253,9 +254,24 @@ def test_summarize_facts_sends_only_the_supplied_figures(monkeypatch):
     monkeypatch.setattr("logic.GROQ_CLIENT_FACTORY", lambda api_key: FakeClient())
     result = summarize_facts("curve", {"date": "2024-01-02", "ns_rmse_bp": 1.2})
     assert result.ok is True
-    assert "curve" in captured["messages"][1]["content"]
+    user_prompt = captured["messages"][1]["content"]
+    assert "curve" in user_prompt
+    assert "2s10s" in user_prompt
+    assert "Reading" in user_prompt
+    assert "Decomposition" in user_prompt
+    assert "Do not mention news" in user_prompt
     assert "2024-01-02" in captured["messages"][0]["content"]
     assert "Do not invent data" in captured["messages"][0]["content"]
+
+
+def test_report_prompt_is_specific_to_each_exhibit():
+    curve = report_prompt("curve")
+    factors = report_prompt("factors")
+    backtest = report_prompt("backtest")
+    assert "constant-maturity" in curve
+    assert "daily yield *changes*" in factors
+    assert "walk-forward" in backtest
+    assert "not an account" in backtest
 
 
 def test_call_llm_builds_context_payload_and_handles_errors(monkeypatch):

@@ -820,7 +820,9 @@ def call_llm(messages: list[dict[str, str]], context_json: str | dict[str, objec
     context_text = context_json if isinstance(context_json, str) else serialize_session_context(context_json)
     system_message = (
         "You are an institutional fixed-income quant analyst. Answer using the active session context. "
-        "Do not invent data beyond this JSON context; call out missing fields clearly.\n\n"
+        "Do not invent data beyond this JSON context; call out missing fields clearly. "
+        "When asked for an exhibit note, follow the requested headings exactly, quote figures with units, "
+        "and write no forecast.\n\n"
         f"ACTIVE_SESSION_CONTEXT_JSON:\n{context_text}"
     )
     input_messages = [{"role": "system", "content": system_message}, *messages]
@@ -844,14 +846,68 @@ def call_llm(messages: list[dict[str, str]], context_json: str | dict[str, objec
         return LLMResult(False, "", f"Groq request failed: {exc}")
 
 
-def summarize_facts(topic: str, facts: dict[str, object]) -> LLMResult:
-    """Ask for a short desk note that may use only the supplied figures."""
-    message = (
-        f"Write a desk note on the {topic} view. Four to six sentences. "
-        "Use only the facts in the session context. State what the figures show and one caveat. "
-        "No preamble and no bullets."
+REPORT_SHARED_RULES = (
+    "You are writing a rates-desk exhibit note, not a conversation and not a forecast. "
+    "Use only JSON fields in ACTIVE_SESSION_CONTEXT_JSON.facts. "
+    "Quote each number exactly as stored, and keep the unit that the field name implies "
+    "(percent, bp, days, Sharpe). "
+    "Every sentence in Reading and Decomposition must contain at least one quoted figure. "
+    "Do not invent tenors, dates, p-values, or strategy names. "
+    "Do not mention news, the Fed, recession, or a future path. "
+    "If a field is absent, write that it is not in the brief. "
+    "Output exactly three headings on their own lines: Reading, Decomposition, Caveats. "
+    "Each heading is followed by one paragraph of 2-4 sentences. No bullets, no preamble, no closing sign-off."
+)
+
+REPORT_TOPIC_INSTRUCTIONS = {
+    "curve": (
+        "This exhibit is one U.S. Treasury constant-maturity curve. "
+        "Reading: name the date; quote the 3-month, 2-year, 10-year, and 30-year yields in percent; "
+        "quote the 2s10s and 10s30s gaps in basis points; say whether the 2s10s gap is positive (upward) "
+        "or negative (inverted). "
+        "Decomposition: compare Nelson-Siegel, Svensson, and spline in-sample RMSE in bp; "
+        "note which fit is tightest and whether leave-one-maturity cross-val RMSE is larger; "
+        "quote NS long-run (beta0) in percent and NS lambda; quote the NSS residual ADF p-value and "
+        "whether those residuals are labelled stationary. "
+        "Caveats: restate that these are constant-maturity yields and that any forward belongs to the fitted "
+        "curve, not a stripped discount curve."
+    ),
+    "factors": (
+        "This exhibit is a principal-component split of daily yield *changes*, not of yield levels. "
+        "Reading: list each component by its supplied label and quote its share of variance in percent; "
+        "quote the combined share of the first three. "
+        "Decomposition: map the labels to motion — a level factor moves most tenors together, a slope factor "
+        "moves the long end versus the front, curvature bends the belly — using only the labels in the brief; "
+        "quote the diagnostic string if it is present. "
+        "Caveats: this describes day-to-day changes over the sample, not the height of today's curve, "
+        "and the leftover variance is the share not captured by the listed components."
+    ),
+    "backtest": (
+        "This exhibit is a walk-forward test of one published-yield spread rule. "
+        "Reading: name the strategy from strategy_label; quote the annualized Sharpe; quote peak-to-trough "
+        "drawdown in bp as a positive loss using max_drawdown_bp_abs; quote underwater days. "
+        "Decomposition: state the train and test windows in days; quote transaction cost in bp and the "
+        "slippage multiplier; say that thresholds come only from the prior train window and that the position "
+        "waits one day. Interpret Sharpe near zero as gains and setbacks cancelling, and a negative Sharpe as "
+        "the rule losing money after costs on this path. "
+        "Caveats: this is a research path on a published spread, not an account, not a live bid/offer, "
+        "and not a statement about the next period."
+    ),
+}
+
+
+def report_prompt(topic: str) -> str:
+    """User message that asks for a figure-grounded exhibit note."""
+    specific = REPORT_TOPIC_INSTRUCTIONS.get(
+        topic,
+        "Describe only the figures in the brief. Quote each number with its unit.",
     )
-    return call_llm([{"role": "user", "content": message}], {"topic": topic, "facts": facts})
+    return f"{REPORT_SHARED_RULES} Topic: {topic}. {specific}"
+
+
+def summarize_facts(topic: str, facts: dict[str, object]) -> LLMResult:
+    """Ask for a formal report that may use only the supplied figures."""
+    return call_llm([{"role": "user", "content": report_prompt(topic)}], {"topic": topic, "facts": facts})
 
 
 def check_groq_model_availability() -> tuple[bool, str | None]:
