@@ -1,0 +1,4 @@
+# Broad catches stay: Streamlit internals and Groq raise assorted errors,
+# and those handlers are the fallback path rather than a programming mistake.
+[lint]
+ignore = ["BLE001", "S110"]

@@ -1,5 +1,5 @@
-from streamlit.testing.v1 import AppTest
 import pandas as pd
+from streamlit.testing.v1 import AppTest
 
 import logic
 

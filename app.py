@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import os
 import secrets
 from html import escape
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import os
-from pathlib import Path
 from dotenv import load_dotenv
 
 from logic import (
@@ -29,12 +30,11 @@ from logic import (
     nss_curve,
     nss_forward,
     predict_smoothing_spline,
-    rolling_ns_fit,
     resolve_groq_api_key,
+    rolling_ns_fit,
     run_curve_spread_backtest,
     serialize_session_context,
 )
-
 
 st.set_page_config(page_title="Yield Curve Engine", layout="wide", page_icon="YC")
 
@@ -360,16 +360,11 @@ def metric_cards(items: list[tuple[str, str, str, str]]) -> None:
     for label, value, sub, tone in items:
         tone_class = f" metric-{tone}" if tone else ""
         cards.append(
-            "<div class='metric-card{tone_class}'>"
-            "<div class='metric-label'>{label}</div>"
-            "<div class='metric-value'>{value}</div>"
-            "<div class='metric-sub'>{sub}</div>"
-            "</div>".format(
-                tone_class=tone_class,
-                label=escape(label),
-                value=escape(value),
-                sub=escape(sub),
-            )
+            f"<div class='metric-card{tone_class}'>"
+            f"<div class='metric-label'>{escape(label)}</div>"
+            f"<div class='metric-value'>{escape(value)}</div>"
+            f"<div class='metric-sub'>{escape(sub)}</div>"
+            "</div>"
         )
     st.markdown(f"<div class='metric-card-grid'>{''.join(cards)}</div>", unsafe_allow_html=True)
 

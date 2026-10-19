@@ -4,17 +4,17 @@ import json
 import os
 import sqlite3
 import time
-from io import StringIO
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
-from typing import Callable, Iterable
 
 import numpy as np
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from scipy.optimize import minimize
 from scipy.interpolate import UnivariateSpline
+from scipy.optimize import minimize
 from statsmodels.tsa.stattools import adfuller
 
 MATURITIES = np.array([1 / 12, 0.25, 0.5, 1, 2, 3, 5, 7, 10, 20, 30], dtype=float)
@@ -609,7 +609,7 @@ def price_coupon_bond(
     payment_frequency: int,
     curve_function: Callable[[np.ndarray], np.ndarray],
 ) -> float:
-    periods = int(round(maturity * payment_frequency))
+    periods = round(maturity * payment_frequency)
     cashflow_times = np.arange(1, periods + 1, dtype=float) / payment_frequency
     coupon = face_value * coupon_rate / payment_frequency
     cashflows = np.full(periods, coupon, dtype=float)
@@ -624,7 +624,7 @@ def adf_stationarity_check(residuals: Iterable[float], alpha: float = 0.05) -> d
     if len(values) < 4 or np.std(values) < 1e-12:
         return {"passed": False, "p_value": 1.0, "message": "Residual series is too short or constant for ADF."}
     try:
-        stat, p_value, *_ = adfuller(values, autolag="AIC")
+        _stat, p_value, *_ = adfuller(values, autolag="AIC")
     except Exception as exc:
         return {"passed": False, "p_value": 1.0, "message": f"ADF failed: {exc}"}
     return {

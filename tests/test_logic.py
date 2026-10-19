@@ -1,18 +1,23 @@
+from typing import ClassVar
+
 import numpy as np
 import pandas as pd
 
 from logic import (
+    GROQ_MODEL_FALLBACK,
+    GROQ_MODEL_PRIMARY,
     MATURITIES,
     SERIES_IDS,
     adf_stationarity_check,
+    bond_risk,
     calculate_drawdown,
     call_llm,
+    check_groq_model_availability,
     check_rate_limit,
     compute_pca,
-    bond_risk,
     discount_factors,
-    fit_smoothing_spline,
     fit_nss,
+    fit_smoothing_spline,
     kalman_filter_diebold_li,
     leave_one_maturity_cv,
     ns_curve,
@@ -23,9 +28,6 @@ from logic import (
     resolve_groq_api_key,
     rolling_ns_fit,
     run_curve_spread_backtest,
-    check_groq_model_availability,
-    GROQ_MODEL_FALLBACK,
-    GROQ_MODEL_PRIMARY,
 )
 
 
@@ -236,7 +238,7 @@ def test_call_llm_builds_context_payload_and_handles_errors(monkeypatch):
                 message = Message()
 
             class Response:
-                choices = [Choice()]
+                choices: ClassVar[list] = [Choice()]
 
             return Response()
 
@@ -276,7 +278,7 @@ def test_call_llm_retries_once_on_model_not_found(monkeypatch):
 
     class ModelNotFoundError(Exception):
         status_code = 404
-        body = {"error": {"code": "model_not_found", "message": "model does not exist"}}
+        body: ClassVar[dict] = {"error": {"code": "model_not_found", "message": "model does not exist"}}
 
     class FakeCompletions:
         def create(self, **kwargs):
@@ -291,7 +293,7 @@ def test_call_llm_retries_once_on_model_not_found(monkeypatch):
                 message = Message()
 
             class Response:
-                choices = [Choice()]
+                choices: ClassVar[list] = [Choice()]
 
             return Response()
 
@@ -318,7 +320,7 @@ def test_call_llm_does_not_retry_non_404_errors(monkeypatch):
 
     class AuthError(Exception):
         status_code = 401
-        body = {"error": {"code": "invalid_api_key", "message": "bad key"}}
+        body: ClassVar[dict] = {"error": {"code": "invalid_api_key", "message": "bad key"}}
 
     class FakeCompletions:
         def create(self, **kwargs):
@@ -351,7 +353,7 @@ def test_groq_model_availability_flags_missing_model(monkeypatch):
     class Models:
         def list(self):
             class Response:
-                data = [Model(GROQ_MODEL_FALLBACK)]
+                data: ClassVar[list] = [Model(GROQ_MODEL_FALLBACK)]
 
             return Response()
 
