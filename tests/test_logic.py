@@ -21,6 +21,7 @@ from logic import (
     nss_forward,
     price_coupon_bond,
     resolve_groq_api_key,
+    rolling_ns_fit,
     run_curve_spread_backtest,
     check_groq_model_availability,
     GROQ_MODEL_FALLBACK,
@@ -97,6 +98,21 @@ def test_nss_recovers_synthetic_parameters():
     assert np.max(np.abs(fitted_again - y)) < 3e-5
     assert abs(result.params["beta0"] - expected["beta0"]) < 0.005
     assert abs(result.params["lambda1"] - result.params["lambda2"]) > 0.02
+
+
+def test_rolling_ns_fit_recovers_known_lambda():
+    dates = pd.bdate_range("2020-01-01", "2021-06-30")
+    rng = np.random.default_rng(3)
+    rows = []
+    for i, _date in enumerate(dates):
+        clean = ns_curve(MATURITIES, 0.035 + i * 1e-6, -0.012, 0.018, 0.6)
+        rows.append(clean + rng.normal(0.0, 1e-6, len(MATURITIES)))
+    frame = pd.DataFrame(rows, index=dates, columns=SERIES_IDS)
+    path = rolling_ns_fit(frame)
+    assert {"rmse", "lambda", "beta0"} <= set(path.columns)
+    assert len(path) == 18
+    assert np.isfinite(path["rmse"]).all()
+    assert abs(float(path["lambda"].median()) - 0.6) < 0.05
 
 
 def test_pca_on_three_factor_synthetic_panel_explains_variance():

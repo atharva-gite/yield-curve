@@ -29,6 +29,7 @@ from logic import (
     nss_curve,
     nss_forward,
     predict_smoothing_spline,
+    rolling_ns_fit,
     resolve_groq_api_key,
     run_curve_spread_backtest,
     serialize_session_context,
@@ -299,6 +300,11 @@ def plotly_dark_theme() -> dict:
     }
 
 
+@st.cache_data(show_spinner="Fitting the month-end Nelson-Siegel path...")
+def cached_rolling_ns(data: pd.DataFrame) -> pd.DataFrame:
+    return rolling_ns_fit(data)
+
+
 @st.cache_data(show_spinner=False)
 def load_data():
     result = get_yield_data()
@@ -480,6 +486,34 @@ def fit_comparison_cards(ns_fit, nss_fit, spline_fit, cv) -> None:
             st.markdown(card_html, unsafe_allow_html=True)
 
 
+def render_ns_stability(data: pd.DataFrame) -> None:
+    path = cached_rolling_ns(data)
+    if path.empty:
+        return
+    section_intro(
+        "Nelson-Siegel stability",
+        "Month-end refits. Lambda should move with the curve, not jump because the optimizer changed its mind.",
+    )
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=path.index, y=path["lambda"], name="λ"))
+    fig.add_trace(go.Scatter(x=path.index, y=path["rmse"] * 1e4, name="RMSE (bp)", yaxis="y2"))
+    fig.update_layout(
+        template=plotly_dark_theme(),
+        title="Month-end Nelson-Siegel λ and RMSE",
+        xaxis_title="Month end",
+        yaxis_title="λ",
+        yaxis2={
+            "title": "RMSE (bp)",
+            "overlaying": "y",
+            "side": "right",
+            "gridcolor": "#334155",
+            "zerolinecolor": "#475569",
+        },
+    )
+    with st.container(border=True):
+        st.plotly_chart(fig, use_container_width=True)
+
+
 def render_bond_risk(nss_params: dict) -> None:
     section_intro(
         "Bond risk",
@@ -598,6 +632,7 @@ def render_fitting_console(data: pd.DataFrame, session: dict) -> None:
             "Forwards are the instantaneous forwards of the fitted constant-maturity curve, "
             "not a bootstrapped Treasury discount curve."
         )
+    render_ns_stability(data)
     render_bond_risk(nss_fit.params)
 
     adf = adf_stationarity_check(nss_fit.residuals)

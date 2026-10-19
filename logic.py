@@ -219,6 +219,32 @@ def fit_ns(maturities: Iterable[float], yields: Iterable[float]) -> FitResult:
     )
 
 
+def rolling_ns_fit(yield_panel: pd.DataFrame, maturities: Iterable[float] | None = None) -> pd.DataFrame:
+    """Fit Nelson-Siegel on month-end rows and return RMSE, lambda, and beta0."""
+    tau = MATURITIES if maturities is None else _as_array(maturities)
+    columns = [column for column in SERIES_IDS if column in yield_panel.columns]
+    if len(columns) != len(tau):
+        raise ValueError("Yield panel columns do not match the maturity grid.")
+    panel = yield_panel[columns].dropna().copy()
+    panel.index = pd.to_datetime(panel.index)
+    month_end = panel.resample("ME").last().dropna()
+    records = []
+    for date, row in month_end.iterrows():
+        fit = fit_ns(tau, row.to_numpy(dtype=float))
+        records.append(
+            {
+                "date": date,
+                "rmse": fit.rmse,
+                "lambda": float(fit.params["lambda"]),
+                "beta0": float(fit.params["beta0"]),
+            }
+        )
+    frame = pd.DataFrame(records)
+    if frame.empty:
+        return pd.DataFrame(columns=["rmse", "lambda", "beta0"])
+    return frame.set_index("date")
+
+
 def fit_nss(maturities: Iterable[float], yields: Iterable[float]) -> FitResult:
     tau = _as_array(maturities)
     y = _as_array(yields)
