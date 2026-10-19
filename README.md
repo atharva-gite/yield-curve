@@ -1,5 +1,7 @@
 # Yield Curve Construction & Term Structure Modeling Engine
 
+[![CI](https://github.com/atharva-gite/yield-curve/actions/workflows/ci.yml/badge.svg)](https://github.com/atharva-gite/yield-curve/actions/workflows/ci.yml)
+
 Production-ready fixed-income analytics app for U.S. Treasury curve construction, Nelson-Siegel / Nelson-Siegel-Svensson / smoothing-spline fitting, yield-change PCA, walk-forward curve-spread backtesting, and Groq-backed quant commentary. The project is structured as a resume-grade internal quant tool: numerical logic is testable outside the UI, external data and LLM calls are isolated, and the Streamlit frontend exposes diagnostics rather than hiding model fragility.
 
 ## Architecture
