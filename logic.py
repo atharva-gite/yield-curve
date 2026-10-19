@@ -132,6 +132,35 @@ def nss_curve(
     )
 
 
+def ns_forward(
+    maturities: Iterable[float] | np.ndarray,
+    beta0: float,
+    beta1: float,
+    beta2: float,
+    lambda_: float,
+) -> np.ndarray:
+    """Instantaneous forward of an NS curve treated as a continuous zero rate."""
+    tau = _as_array(maturities)
+    decay = np.exp(-lambda_ * tau)
+    return beta0 + beta1 * decay + beta2 * (lambda_ * tau) * decay
+
+
+def nss_forward(
+    maturities: Iterable[float] | np.ndarray,
+    beta0: float,
+    beta1: float,
+    beta2: float,
+    beta3: float,
+    lambda1: float,
+    lambda2: float,
+) -> np.ndarray:
+    """Instantaneous forward of an NSS curve treated as a continuous zero rate."""
+    tau = _as_array(maturities)
+    decay1 = np.exp(-lambda1 * tau)
+    decay2 = np.exp(-lambda2 * tau)
+    return beta0 + beta1 * decay1 + beta2 * (lambda1 * tau) * decay1 + beta3 * (lambda2 * tau) * decay2
+
+
 def ns_design_matrix(maturities: Iterable[float], lambda_: float) -> np.ndarray:
     tau = _as_array(maturities)
     l1 = _safe_loading(lambda_, tau)

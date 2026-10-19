@@ -15,7 +15,9 @@ from logic import (
     kalman_filter_diebold_li,
     leave_one_maturity_cv,
     ns_curve,
+    ns_forward,
     nss_curve,
+    nss_forward,
     price_coupon_bond,
     resolve_groq_api_key,
     run_curve_spread_backtest,
@@ -23,6 +25,37 @@ from logic import (
     GROQ_MODEL_FALLBACK,
     GROQ_MODEL_PRIMARY,
 )
+
+
+def _forward_from_yield(curve, tau: np.ndarray, params: tuple[float, ...], step: float = 1e-4) -> np.ndarray:
+    y = curve(tau, *params)
+    slope = (curve(tau + step, *params) - curve(tau - step, *params)) / (2.0 * step)
+    return y + tau * slope
+
+
+def test_ns_forward_matches_yield_derivative_identity():
+    params = (0.04, -0.015, 0.02, 0.7)
+    tau = np.linspace(0.25, 30.0, 80)
+    analytic = ns_forward(tau, *params)
+    numerical = _forward_from_yield(ns_curve, tau, params)
+    assert np.allclose(analytic, numerical, atol=1e-6)
+
+
+def test_nss_forward_matches_yield_derivative_identity():
+    params = (0.041, -0.018, 0.026, -0.012, 0.55, 1.75)
+    tau = np.linspace(0.25, 30.0, 80)
+    analytic = nss_forward(tau, *params)
+    numerical = _forward_from_yield(nss_curve, tau, params)
+    assert np.allclose(analytic, numerical, atol=1e-6)
+
+
+def test_ns_forward_flat_curve_is_beta0_and_short_end_is_beta0_plus_beta1():
+    flat = ns_forward(np.array([0.0, 2.0, 10.0, 30.0]), 0.03, 0.0, 0.0, 0.6)
+    assert np.allclose(flat, 0.03)
+    short_end = ns_forward(np.array([0.0]), 0.04, -0.01, 0.02, 0.5)[0]
+    assert np.isclose(short_end, 0.03)
+    nss_short = nss_forward(np.array([0.0]), 0.041, -0.018, 0.026, -0.012, 0.55, 1.75)[0]
+    assert np.isclose(nss_short, 0.041 - 0.018)
 
 
 def test_ns_loading_limit_is_finite_near_zero():

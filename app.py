@@ -24,7 +24,9 @@ from logic import (
     get_yield_data,
     leave_one_maturity_cv,
     ns_curve,
+    ns_forward,
     nss_curve,
+    nss_forward,
     predict_smoothing_spline,
     resolve_groq_api_key,
     run_curve_spread_backtest,
@@ -534,9 +536,41 @@ def render_fitting_console(data: pd.DataFrame, session: dict) -> None:
             name="Smoothing Spline",
         )
     )
-    fig.update_layout(template=plotly_dark_theme(), xaxis_title="Maturity (years)", yaxis_title="Yield (%)")
+    fig.add_trace(
+        go.Scatter(
+            x=dense,
+            y=ns_forward(
+                dense,
+                ns_fit.params["beta0"],
+                ns_fit.params["beta1"],
+                ns_fit.params["beta2"],
+                ns_fit.params["lambda"],
+            )
+            * 100,
+            name="NS forward",
+            line={"dash": "dash"},
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=dense,
+            y=nss_forward(dense, **nss_fit.params) * 100,
+            name="NSS forward",
+            line={"dash": "dot"},
+        )
+    )
+    fig.update_layout(
+        template=plotly_dark_theme(),
+        title="Fitted yields and instantaneous forwards",
+        xaxis_title="Maturity (years)",
+        yaxis_title="Rate (%)",
+    )
     with st.container(border=True):
         st.plotly_chart(fig, use_container_width=True)
+        st.caption(
+            "Forwards are the instantaneous forwards of the fitted constant-maturity curve, "
+            "not a bootstrapped Treasury discount curve."
+        )
 
     adf = adf_stationarity_check(nss_fit.residuals)
     css = "status-ok" if adf["passed"] else "status-bad"
