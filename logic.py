@@ -844,6 +844,16 @@ def call_llm(messages: list[dict[str, str]], context_json: str | dict[str, objec
         return LLMResult(False, "", f"Groq request failed: {exc}")
 
 
+def summarize_facts(topic: str, facts: dict[str, object]) -> LLMResult:
+    """Ask for a short desk note that may use only the supplied figures."""
+    message = (
+        f"Write a desk note on the {topic} view. Four to six sentences. "
+        "Use only the facts in the session context. State what the figures show and one caveat. "
+        "No preamble and no bullets."
+    )
+    return call_llm([{"role": "user", "content": message}], {"topic": topic, "facts": facts})
+
+
 def check_groq_model_availability() -> tuple[bool, str | None]:
     _load_project_dotenv()
     api_key, key_source = resolve_groq_api_key()

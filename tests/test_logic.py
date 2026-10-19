@@ -28,6 +28,7 @@ from logic import (
     resolve_groq_api_key,
     rolling_ns_fit,
     run_curve_spread_backtest,
+    summarize_facts,
 )
 
 
@@ -222,6 +223,39 @@ def test_walk_forward_backtest_strategy_and_drawdown_stats():
     assert result["max_drawdown_duration"] >= 0
     dd = calculate_drawdown(result["cumulative_pnl"])
     assert "max_duration" in dd
+
+
+def test_summarize_facts_sends_only_the_supplied_figures(monkeypatch):
+    captured = {}
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+
+            class Message:
+                content = "The curve is upward. The NSS residual check passed."
+
+            class Choice:
+                message = Message()
+
+            class Response:
+                choices: ClassVar[list] = [Choice()]
+
+            return Response()
+
+    class FakeChat:
+        completions = FakeCompletions()
+
+    class FakeClient:
+        chat = FakeChat()
+
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.setattr("logic.GROQ_CLIENT_FACTORY", lambda api_key: FakeClient())
+    result = summarize_facts("curve", {"date": "2024-01-02", "ns_rmse_bp": 1.2})
+    assert result.ok is True
+    assert "curve" in captured["messages"][1]["content"]
+    assert "2024-01-02" in captured["messages"][0]["content"]
+    assert "Do not invent data" in captured["messages"][0]["content"]
 
 
 def test_call_llm_builds_context_payload_and_handles_errors(monkeypatch):
