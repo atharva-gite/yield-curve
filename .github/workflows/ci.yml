@@ -23,9 +23,7 @@ jobs:
           pytest tests/ --tb=short > pytest-out.txt 2>&1
           code=$?
           if [ "$code" -ne 0 ]; then
-            tail -n 50 pytest-out.txt | while IFS= read -r line; do
-              echo "::error title=pytest::${line}"
-            done
+            python -c 'from pathlib import Path; text = Path("pytest-out.txt").read_text(errors="replace"); start = text.rfind("FAILURES"); snippet = (text[start:] if start >= 0 else text)[-2500:]; print("::error title=pytest::" + snippet.replace("%", "%25").replace("\r", "").replace("\n", "%0A"))'
           fi
           exit "$code"
 
